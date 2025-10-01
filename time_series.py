@@ -37,3 +37,8 @@ df_news.drop(columns=['Unnamed: 0'], inplace=True, errors='ignore')
 print("\nAfter cleaning - Minute shape:", df_minute.shape)
 print("News unique dates:", df_news['Date'].nunique())
 
+# Exploratory Data Analysis (EDA)
+df_minute['BidSpread'] = df_minute['BH'] - df_minute['BL']  # Bid range
+df_minute['AskSpread'] = df_minute['AH'] - df_minute['AL']  # Ask range
+df_minute['BidReturn'] = df_minute['BC'].pct_change()
+df_minute['Volatility'] = df_minute['BidReturn'].rolling(window=60).std()  # 1-hour rolling
