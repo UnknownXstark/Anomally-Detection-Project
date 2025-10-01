@@ -103,8 +103,10 @@ df_test_reset = df_test.reset_index()
 df_news_reset = df_news.reset_index()
 df_test_reset = df_test_reset.merge(df_news_reset[['Date', 'Article']], left_on=df_test_reset['Datetime'].dt.date, right_on='Date', how='left')
 news_dates = df_news['Date'].dropna().unique()
-true_anomalies = df_test_reset[df_test_reset['Date'].notna()]
-true_pos = len(df_test_reset[(df_test_reset['Anomaly'] == -1) & (df_test_reset['Date'].notna())])
+
+anomaly_dates = df_test_reset[df_test_reset['Anomaly'] == -1]['Datetime'].dt.date
+true_anomalies = df_test_reset[df_test_reset['Date'].isin(anomaly_dates)]
+true_pos = len(true_anomalies)
 print(f"True positives (news-correlated): {true_pos}")
 
 plt.figure(figsize=(12, 6))
