@@ -78,3 +78,8 @@ print(df_minute[num_features + ['Hour']].head())
 
 # Baseline Anomaly Detection Model
 X = df_minute[num_features].dropna()
+
+# Chronological split (train 2002-2015, test 2016-2019 for evolving normals)
+train_end = '2016-01-01'
+X_train = X[X.index < train_end]
+X_test = X[X.index >= train_end]
