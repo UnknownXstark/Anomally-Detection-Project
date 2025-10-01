@@ -75,3 +75,6 @@ df_minute[num_features] = scaler.fit_transform(df_minute[num_features].fillna(0)
 
 print("After engineering - New columns:", [col for col in df_minute.columns if 'TimeBucket' in col])
 print(df_minute[num_features + ['Hour']].head())
+
+# Baseline Anomaly Detection Model
+X = df_minute[num_features].dropna()
