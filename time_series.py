@@ -19,4 +19,7 @@ df_hour = pd.read_csv('EURUSD_hour.csv', parse_dates={'Datetime': ['Date', 'Time
 df_hour.set_index('Datetime', inplace=True)
 print("\nHourly Data Shape:", df_hour.shape)
 
-df_news = pd.read_csv('forex_news.csv')
+df_news = pd.read_csv('eurusd_news.csv')
+df_news['Date'] = pd.to_datetime(df_news['Article'].str.extract(r'(\d{4}-\d{2}-\d{2})')[0], errors='coerce')
+df_news.dropna(subset=['Date'], inplace=True)
+print("\nNews Data Head:\n", df_news.head())
