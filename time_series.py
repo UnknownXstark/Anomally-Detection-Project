@@ -59,3 +59,12 @@ Q3 = df_minute['BidReturn'].quantile(0.75)
 IQR = Q3 - Q1
 outliers = df_minute[(df_minute['BidReturn'] < (Q1 - 1.5 * IQR)) | (df_minute['BidReturn'] > (Q3 + 1.5 * IQR))]
 print(f"Potential outliers (extreme returns): {len(outliers)} / {len(df_minute)} ({len(outliers)/len(df_minute)*100:.2f}%)")
+
+# Feature Engineering and Wrangling
+df_minute['LogBidSpread'] = np.log1p(df_minute['BidSpread'])
+df_minute['Hour'] = df_minute.index.hour
+df_minute['DayOfWeek'] = df_minute.index.dayofweek
+df_minute['TimeBucket'] = pd.cut(df_minute['Hour'], bins=[0,6,12,18,24], labels=['Night', 'Morning', 'Afternoon', 'Evening'])
+df_minute['PriceRatio'] = df_minute['AC'] / df_minute['BC']  # Ask/Bid close ratio
+
+df_minute = pd.get_dummies(df_minute, columns=['TimeBucket'], drop_first=True)
