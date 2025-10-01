@@ -31,3 +31,9 @@ df_hour.fillna(method='ffill', inplace=True)
 
 df_minute.drop_duplicates(inplace=True)
 df_hour.drop_duplicates(inplace=True)
+
+df_news.drop(columns=['Unnamed: 0'], inplace=True, errors='ignore')
+
+print("\nAfter cleaning - Minute shape:", df_minute.shape)
+print("News unique dates:", df_news['Date'].nunique())
+
