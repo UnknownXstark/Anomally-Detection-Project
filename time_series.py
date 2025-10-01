@@ -117,3 +117,8 @@ plt.show()
 importances = np.mean([tree.feature_importances_ for tree in model.estimators_], axis=0)
 feat_imp = pd.Series(importances, index=num_features).sort_values(ascending=False)
 print("\nTop features (approximate importance):\n", feat_imp.head(10))
+
+false_pos = df_test[(df_test['Anomaly'] == -1) & (~df_test['Datetime'].isin(news_dates))]
+false_neg = df_test[(df_test['Anomaly'] == 1) & (df_test['Datetime'].isin(news_dates))]
+print("\nFalse Positives (normal volatility):", len(false_pos))
+print("False Negatives (missed news events):", len(false_neg))
