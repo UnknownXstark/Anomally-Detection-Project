@@ -105,3 +105,15 @@ news_dates = df_news['Date'].dropna().unique()
 true_anomalies = df_test_reset[df_test_reset['Datetime'].isin(news_dates)]
 true_pos = len(df_test_reset[(df_test_reset['Anomaly'] == -1) & (df_test_reset['Datetime'].isin(news_dates))])
 print(f"True positives (news-correlated): {true_pos}")
+
+plt.figure(figsize=(12, 6))
+plt.plot(df_test.index, df_test['BidReturn'], label='Bid Return')
+plt.scatter(top_anomalies.index, top_anomalies['BidReturn'], color='red', label='Anomalies')
+plt.title('Anomalies in Test Period (2016-2019)')
+plt.legend()
+plt.show()
+
+# Interpretation and Insights
+importances = np.mean([tree.feature_importances_ for tree in model.estimators_], axis=0)
+feat_imp = pd.Series(importances, index=num_features).sort_values(ascending=False)
+print("\nTop features (approximate importance):\n", feat_imp.head(10))
