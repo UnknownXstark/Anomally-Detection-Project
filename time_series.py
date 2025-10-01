@@ -122,3 +122,5 @@ false_pos = df_test[(df_test['Anomaly'] == -1) & (~df_test['Datetime'].isin(news
 false_neg = df_test[(df_test['Anomaly'] == 1) & (df_test['Datetime'].isin(news_dates))]
 print("\nFalse Positives (normal volatility):", len(false_pos))
 print("False Negatives (missed news events):", len(false_neg))
+
+# Business implication: Anomalies signal market shocks; false positives may trigger unnecessary alerts, false negatives miss trading opportunities (survey p.1).
