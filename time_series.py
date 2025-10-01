@@ -68,3 +68,10 @@ df_minute['TimeBucket'] = pd.cut(df_minute['Hour'], bins=[0,6,12,18,24], labels=
 df_minute['PriceRatio'] = df_minute['AC'] / df_minute['BC']  # Ask/Bid close ratio
 
 df_minute = pd.get_dummies(df_minute, columns=['TimeBucket'], drop_first=True)
+
+num_features = ['BO', 'BH', 'BL', 'BC', 'BCh', 'AO', 'AH', 'AL', 'AC', 'ACh', 'BidSpread', 'AskSpread', 'BidReturn', 'Volatility', 'LogBidSpread', 'PriceRatio', 'Hour', 'DayOfWeek']
+scaler = StandardScaler()
+df_minute[num_features] = scaler.fit_transform(df_minute[num_features].fillna(0))  # Fill NaN from pct_change
+
+print("After engineering - New columns:", [col for col in df_minute.columns if 'TimeBucket' in col])
+print(df_minute[num_features + ['Hour']].head())
