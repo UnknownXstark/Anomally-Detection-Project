@@ -88,3 +88,8 @@ model = IsolationForest(contamination=0.01, random_state=42)  # 1% anomalies
 model.fit(X_train)
 anomaly_scores = model.decision_function(X_test)
 anomaly_labels = model.predict(X_test)  # -1 = anomaly
+
+df_test = X_test.copy()
+df_test['Anomaly'] = anomaly_labels
+df_test['Score'] = anomaly_scores
+top_anomalies = df_test[df_test['Anomaly'] == -1].sort_values('Score')
