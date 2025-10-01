@@ -96,3 +96,12 @@ top_anomalies = df_test[df_test['Anomaly'] == -1].sort_values('Score')
 
 print("Detected anomalies:", (df_test['Anomaly'] == -1).sum())
 print("Top 5 anomaly dates:\n", top_anomalies.head().index)
+
+df_test_reset = df_test.reset_index()
+df_test_reset = df_test_reset.merge(df_news[['Date', 'Article']], left_on='Datetime', right_on='Date', how='left')
+# Simulate "high impact" anomalies (parse impact from Article if possible)
+# For now, assume top news dates as true positives
+news_dates = df_news['Date'].dropna().unique()
+true_anomalies = df_test_reset[df_test_reset['Datetime'].isin(news_dates)]
+true_pos = len(df_test_reset[(df_test_reset['Anomaly'] == -1) & (df_test_reset['Datetime'].isin(news_dates))])
+print(f"True positives (news-correlated): {true_pos}")
