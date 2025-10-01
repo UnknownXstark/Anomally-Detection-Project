@@ -53,3 +53,9 @@ axes[1,0].set_title('Correlation Heatmap')
 df_minute['Volatility'].plot(ax=axes[1,1], title='Rolling Volatility Over Time')
 plt.tight_layout()
 plt.show()
+
+Q1 = df_minute['BidReturn'].quantile(0.25)
+Q3 = df_minute['BidReturn'].quantile(0.75)
+IQR = Q3 - Q1
+outliers = df_minute[(df_minute['BidReturn'] < (Q1 - 1.5 * IQR)) | (df_minute['BidReturn'] > (Q3 + 1.5 * IQR))]
+print(f"Potential outliers (extreme returns): {len(outliers)} / {len(df_minute)} ({len(outliers)/len(df_minute)*100:.2f}%)")
