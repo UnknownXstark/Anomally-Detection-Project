@@ -83,3 +83,8 @@ X = df_minute[num_features].dropna()
 train_end = '2016-01-01'
 X_train = X[X.index < train_end]
 X_test = X[X.index >= train_end]
+
+model = IsolationForest(contamination=0.01, random_state=42)  # 1% anomalies
+model.fit(X_train)
+anomaly_scores = model.decision_function(X_test)
+anomaly_labels = model.predict(X_test)  # -1 = anomaly
