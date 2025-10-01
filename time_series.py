@@ -42,3 +42,14 @@ df_minute['BidSpread'] = df_minute['BH'] - df_minute['BL']  # Bid range
 df_minute['AskSpread'] = df_minute['AH'] - df_minute['AL']  # Ask range
 df_minute['BidReturn'] = df_minute['BC'].pct_change()
 df_minute['Volatility'] = df_minute['BidReturn'].rolling(window=60).std()  # 1-hour rolling
+
+fig, axes = plt.subplots(2, 2, figsize=(15, 10))
+sns.histplot(df_minute['BidSpread'], bins=50, kde=True, ax=axes[0,0])
+axes[0,0].set_title('Bid Spread Distribution')
+sns.boxplot(y=df_minute['BidReturn'], ax=axes[0,1])
+axes[0,1].set_title('Bid Return Boxplot')
+sns.heatmap(df_minute[['BO', 'BH', 'BL', 'BC', 'BCh', 'AO', 'AH', 'AL', 'AC', 'ACh', 'BidSpread', 'BidReturn']].corr(), annot=True, cmap='coolwarm', ax=axes[1,0])
+axes[1,0].set_title('Correlation Heatmap')
+df_minute['Volatility'].plot(ax=axes[1,1], title='Rolling Volatility Over Time')
+plt.tight_layout()
+plt.show()
