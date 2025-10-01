@@ -28,3 +28,6 @@ print("\nNews Data Head:\n", df_news.head())
 # Data Preprocessing
 df_minute.fillna(method='ffill', inplace=True)
 df_hour.fillna(method='ffill', inplace=True)
+
+df_minute.drop_duplicates(inplace=True)
+df_hour.drop_duplicates(inplace=True)
