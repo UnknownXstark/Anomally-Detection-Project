@@ -18,3 +18,5 @@ print("\nBasic stats:\n", df_minute.describe())
 df_hour = pd.read_csv('EURUSD_hour.csv', parse_dates={'Datetime': ['Date', 'Time']})
 df_hour.set_index('Datetime', inplace=True)
 print("\nHourly Data Shape:", df_hour.shape)
+
+df_news = pd.read_csv('forex_news.csv')
