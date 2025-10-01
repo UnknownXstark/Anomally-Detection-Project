@@ -93,3 +93,6 @@ df_test = X_test.copy()
 df_test['Anomaly'] = anomaly_labels
 df_test['Score'] = anomaly_scores
 top_anomalies = df_test[df_test['Anomaly'] == -1].sort_values('Score')
+
+print("Detected anomalies:", (df_test['Anomaly'] == -1).sum())
+print("Top 5 anomaly dates:\n", top_anomalies.head().index)
