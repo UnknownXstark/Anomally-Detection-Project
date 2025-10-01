@@ -21,7 +21,9 @@ df_hour.set_index('Datetime', inplace=True)
 print("\nHourly Data Shape:", df_hour.shape)
 
 df_news = pd.read_csv('eurusd_news.csv')
-df_news['Date'] = pd.to_datetime(df_news['Article'].str.extract(r'(\d{4}-\d{2}-\d{2})')[0], errors='coerce')
+if df_news['Date'].isnull().all():
+    df_news['Date'] = pd.to_datetime(df_news['Article'].str.extract(r'(\d{4}-\d{2}-\d{2})')[0], errors='coerce')
+df_news['Date'] = pd.to_datetime(df_news['Date']).dt.date  # Convert to date only for matching
 df_news.dropna(subset=['Date'], inplace=True)
 print("\nNews Data Head:\n", df_news.head())
 
@@ -38,56 +40,56 @@ print("\nAfter cleaning - Minute shape:", df_minute.shape)
 print("News unique dates:", df_news['Date'].nunique())
 
 # Exploratory Data Analysis (EDA)
-df_minute['BidSpread'] = df_minute['BH'] - df_minute['BL']  # Bid range
-df_minute['AskSpread'] = df_minute['AH'] - df_minute['AL']  # Ask range
+df_minute['BidSpread'] = df_minute['BH'] - df_minute['BL']
+df_minute['AskSpread'] = df_minute['AH'] - df_minute['AL']
 df_minute['BidReturn'] = df_minute['BC'].pct_change()
-df_minute['Volatility'] = df_minute['BidReturn'].rolling(window=60).std()  # 1-hour rolling
+df_minute['Volatility'] = df_minute['BidReturn'].rolling(window=60).std()
 
 fig, axes = plt.subplots(2, 2, figsize=(15, 10))
-sns.histplot(df_minute['BidSpread'], bins=50, kde=True, ax=axes[0,0])
+sns.histplot(df_minute['BidSpread'].dropna(), bins=50, kde=True, ax=axes[0,0])
 axes[0,0].set_title('Bid Spread Distribution')
-sns.boxplot(y=df_minute['BidReturn'], ax=axes[0,1])
+sns.boxplot(y=df_minute['BidReturn'].dropna(), ax=axes[0,1])
 axes[0,1].set_title('Bid Return Boxplot')
 sns.heatmap(df_minute[['BO', 'BH', 'BL', 'BC', 'BCh', 'AO', 'AH', 'AL', 'AC', 'ACh', 'BidSpread', 'BidReturn']].corr(), annot=True, cmap='coolwarm', ax=axes[1,0])
 axes[1,0].set_title('Correlation Heatmap')
-df_minute['Volatility'].plot(ax=axes[1,1], title='Rolling Volatility Over Time')
+df_minute['Volatility'].dropna().plot(ax=axes[1,1], title='Rolling Volatility Over Time')
 plt.tight_layout()
 plt.show()
 
 Q1 = df_minute['BidReturn'].quantile(0.25)
 Q3 = df_minute['BidReturn'].quantile(0.75)
 IQR = Q3 - Q1
-outliers = df_minute[(df_minute['BidReturn'] < (Q1 - 1.5 * IQR)) | (df_minute['BidReturn'] > (Q3 + 1.5 * IQR))]
-print(f"Potential outliers (extreme returns): {len(outliers)} / {len(df_minute)} ({len(outliers)/len(df_minute)*100:.2f}%)")
+outliers = df_minute[(df_minute['BidReturn'] < (Q1 - 4 * IQR)) | (df_minute['BidReturn'] > (Q3 + 4 * IQR))]
+print(f"Potential outliers (extreme returns, 4*IQR): {len(outliers)} / {len(df_minute)} ({len(outliers)/len(df_minute)*100:.2f}%)")
 
 # Feature Engineering and Wrangling
 df_minute['LogBidSpread'] = np.log1p(df_minute['BidSpread'])
 df_minute['Hour'] = df_minute.index.hour
 df_minute['DayOfWeek'] = df_minute.index.dayofweek
 df_minute['TimeBucket'] = pd.cut(df_minute['Hour'], bins=[0,6,12,18,24], labels=['Night', 'Morning', 'Afternoon', 'Evening'])
-df_minute['PriceRatio'] = df_minute['AC'] / df_minute['BC']  # Ask/Bid close ratio
+df_minute['PriceRatio'] = df_minute['AC'] / df_minute['BC']
 
 df_minute = pd.get_dummies(df_minute, columns=['TimeBucket'], drop_first=True)
 
 num_features = ['BO', 'BH', 'BL', 'BC', 'BCh', 'AO', 'AH', 'AL', 'AC', 'ACh', 'BidSpread', 'AskSpread', 'BidReturn', 'Volatility', 'LogBidSpread', 'PriceRatio', 'Hour', 'DayOfWeek']
 scaler = StandardScaler()
-df_minute[num_features] = scaler.fit_transform(df_minute[num_features].fillna(0))  # Fill NaN from pct_change
+df_minute[num_features] = scaler.fit_transform(df_minute[num_features].fillna(0))
 
 print("After engineering - New columns:", [col for col in df_minute.columns if 'TimeBucket' in col])
 print(df_minute[num_features + ['Hour']].head())
 
 # Baseline Anomaly Detection Model
-X = df_minute[num_features].dropna()
+X = df_minute[num_features].copy()
+X.index = df_minute.index
 
-# Chronological split (train 2002-2015, test 2016-2019 for evolving normals)
 train_end = '2016-01-01'
-X_train = X[X.index < train_end]
-X_test = X[X.index >= train_end]
+X_train = X[X.index < train_end].dropna()
+X_test = X[X.index >= train_end].dropna()
 
-model = IsolationForest(contamination=0.01, random_state=42)  # 1% anomalies
+model = IsolationForest(contamination=0.005, random_state=42)  # Reduced to 0.5% anomalies
 model.fit(X_train)
 anomaly_scores = model.decision_function(X_test)
-anomaly_labels = model.predict(X_test)  # -1 = anomaly
+anomaly_labels = model.predict(X_test)
 
 df_test = X_test.copy()
 df_test['Anomaly'] = anomaly_labels
@@ -98,17 +100,16 @@ print("Detected anomalies:", (df_test['Anomaly'] == -1).sum())
 print("Top 5 anomaly dates:\n", top_anomalies.head().index)
 
 df_test_reset = df_test.reset_index()
-df_test_reset = df_test_reset.merge(df_news[['Date', 'Article']], left_on='Datetime', right_on='Date', how='left')
-# Simulate "high impact" anomalies (parse impact from Article if possible)
-# For now, assume top news dates as true positives
+df_news_reset = df_news.reset_index()
+df_test_reset = df_test_reset.merge(df_news_reset[['Date', 'Article']], left_on=df_test_reset['Datetime'].dt.date, right_on='Date', how='left')
 news_dates = df_news['Date'].dropna().unique()
-true_anomalies = df_test_reset[df_test_reset['Datetime'].isin(news_dates)]
-true_pos = len(df_test_reset[(df_test_reset['Anomaly'] == -1) & (df_test_reset['Datetime'].isin(news_dates))])
+true_anomalies = df_test_reset[df_test_reset['Date'].notna()]
+true_pos = len(df_test_reset[(df_test_reset['Anomaly'] == -1) & (df_test_reset['Date'].notna())])
 print(f"True positives (news-correlated): {true_pos}")
 
 plt.figure(figsize=(12, 6))
-plt.plot(df_test.index, df_test['BidReturn'], label='Bid Return')
-plt.scatter(top_anomalies.index, top_anomalies['BidReturn'], color='red', label='Anomalies')
+plt.plot(df_test.index, df_test['BidReturn'].fillna(0), label='Bid Return')
+plt.scatter(top_anomalies.index, top_anomalies['BidReturn'].fillna(0), color='red', label='Anomalies')
 plt.title('Anomalies in Test Period (2016-2019)')
 plt.legend()
 plt.show()
@@ -118,8 +119,8 @@ importances = np.mean([tree.feature_importances_ for tree in model.estimators_],
 feat_imp = pd.Series(importances, index=num_features).sort_values(ascending=False)
 print("\nTop features (approximate importance):\n", feat_imp.head(10))
 
-false_pos = df_test[(df_test['Anomaly'] == -1) & (~df_test['Datetime'].isin(news_dates))]
-false_neg = df_test[(df_test['Anomaly'] == 1) & (df_test['Datetime'].isin(news_dates))]
+false_pos = df_test_reset[(df_test_reset['Anomaly'] == -1) & (df_test_reset['Date'].isna())]
+false_neg = df_test_reset[(df_test_reset['Anomaly'] == 1) & (df_test_reset['Date'].notna())]
 print("\nFalse Positives (normal volatility):", len(false_pos))
 print("False Negatives (missed news events):", len(false_neg))
 
